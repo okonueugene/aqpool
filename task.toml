@@ -8,7 +8,7 @@ name = "java-concurrent-aquifer-pool"
 difficulty = "hard"
 author_name = "terminus"
 author_email = "eugeneokonu@gmail.com"
-author_organization = ""
+author_organization = "independent"
 category = "software-engineering"
 tags = ["java", "concurrency", "connection-pool", "synchronization", "multithreading", "non-python"]
 task_subtypes = []
@@ -18,11 +18,9 @@ number_of_milestones = 3
 difficulty_explanation = "The failures are subtle synchronization and lifecycle bugs in a concurrent pool: a race between semaphore.acquire() and non-atomic use of the available list does not show up in sequential testing; permit loss after exceptions only appears under failure paths; contention can also hide liveness issues. Diagnosis needs a solid grasp of Java's memory model and java.util.concurrent primitives."
 solution_explanation = "Outcome: no two threads hold the same Connection at once; failed createNewConnection() does not permanently reduce pool capacity; waiters make progress under contention; released idle connections are borrowed again instead of always allocating new ones."
 verification_explanation = """
-Milestones are checked in strict sequential order via /tmp/milestone.txt (M1 overwrites the file, M2+M3 append; awk enforces order).
-M1 runs testConcurrentAccess + testIdleConnectionReuse (30x each).
-M2 runs testPermitLeakRecovery (30x).
-M3 runs testFairnessUnderContention (30x).
-test_outputs.py then performs static validation: file integrity, public API signatures unchanged, mvn clean compile succeeds, proper Semaphore usage, and actual add/remove|poll on the available list inside getConnection/releaseConnection.
+/tmp/milestone.txt order is enforced with awk (M1 replaces the file; M2/M3 append).
+Stress: M1 concurrent + idle reuse, M2 permit recovery, M3 contention liveness — 30 runs each.
+test_outputs.py does the static bit: paths, signatures, compile, Semaphore usage, and real available list traffic in get/release.
 """
 expert_time_estimate_hours = 1
 junior_time_estimate_hours = 4
