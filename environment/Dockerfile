@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y python3 python3-pytest && rm -rf /var/l
 
 WORKDIR /app
 
-# setup_challenge only — no tests/solution baked in
+# COPY only the scaffold generator; nothing from the verifier tree.
 COPY setup_challenge.py /app/setup_challenge.py
 
 # Stub out challenge tree
