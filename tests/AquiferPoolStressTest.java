@@ -72,6 +72,20 @@ public class AquiferPoolStressTest {
     }
 
     @Test
+    @DisplayName("Released idle connections must be reused on the next borrow")
+    void testIdleConnectionReuse() throws Exception {
+        AquiferPool pool = new AquiferPool(MAX_POOL_SIZE);
+        Connection first = pool.getConnection();
+        assertNotNull(first);
+        pool.releaseConnection(first);
+        Connection second = pool.getConnection();
+        assertNotNull(second);
+        assertSame(first, second,
+                "Pool must reuse a released connection instead of always creating a new one");
+        pool.releaseConnection(second);
+    }
+
+    @Test
     @DisplayName("Pool must recover to full capacity after connection creation failures")
     void testPermitLeakRecovery() throws Exception {
         // Uses an AtomicBoolean to simulate a database being down during initial

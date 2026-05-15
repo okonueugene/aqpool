@@ -107,18 +107,46 @@ def test_semaphore_acquire_and_release_are_called():
     )
 
 
+def _extract_method_body(source: str, signature_fragment: str) -> str:
+    """Return the braced body of the first method whose signature contains fragment."""
+    start = source.find(signature_fragment)
+    if start == -1:
+        return ""
+    brace = source.find("{", start)
+    if brace == -1:
+        return ""
+    depth = 0
+    for i in range(brace, len(source)):
+        ch = source[i]
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return source[brace : i + 1]
+    return ""
+
+
 def test_available_structure_used_for_pooling():
     """
-    Verifies the shared available list participates in borrow/return logic,
-    not only mentioned in a comment or unused field.
+    Verifies the shared available list is used for real borrow/return in the
+    public API — not only in dead code or decoy calls outside get/release.
     """
     content = POOL_FILE.read_text()
-    uses_list_ops = bool(
-        re.search(r"\bavailable\s*\.\s*(add|remove|isEmpty|size)\s*\(", content)
+    get_body = _extract_method_body(content, "getConnection()")
+    release_body = _extract_method_body(content, "releaseConnection(")
+
+    borrows_from_available = bool(
+        re.search(r"\bavailable\s*\.\s*(remove|poll)\s*\(", get_body)
     )
-    uses_sync_on_available = "synchronized" in content and re.search(
-        r"synchronized\s*\(\s*available\s*\)", content
+    returns_to_available = bool(
+        re.search(r"\bavailable\s*\.\s*add\s*\(", release_body)
     )
-    assert uses_list_ops or uses_sync_on_available, (
-        "available list must be used for pooling (list ops or synchronized(available))"
+
+    assert borrows_from_available, (
+        "getConnection() must borrow idle connections from available "
+        "(remove or poll), not only call createNewConnection()"
+    )
+    assert returns_to_available, (
+        "releaseConnection() must return connections to available (add)"
     )
